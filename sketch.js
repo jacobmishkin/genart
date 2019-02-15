@@ -4,21 +4,22 @@ const random = require("canvas-sketch-util/random");
 const palettes = require("nice-color-palettes/1000.json");
 
 const settings = {
+  animate: true,
   dimensions: [2048, 2048]
 };
 
 const sketch = ({ width, height }) => {
-  const count = 40;
+  const count = 60;
   const margin = width * 0.15;
   const maxColors = random.rangeFloor(2, 6);
   const fontFamily = '"Avenir"';
   const palette = random.shuffle(random.pick(palettes)).slice(0, maxColors);
   const background = "hsl(0, 0%, 94%)";
-  const characters = "=:".split("");
+  const characters = "--:".split("");
 
   const createGrid = () => {
     const points = [];
-    const frequency = random.range(0.75, 1.25);
+    const frequency = random.range(0.75, 1.55);
 
     for (let x = 0; x < count; x++) {
       for (let y = 0; y < count; y++) {
@@ -57,7 +58,7 @@ const sketch = ({ width, height }) => {
       const x = lerp(margin, width - margin, u);
       const y = lerp(margin, height - margin, v);
       context.fillStyle = context.strokeStyle = color;
-      context.textAlign = "left";
+      context.textAlign = "center";
       context.textBaseline = "middle";
       context.font = `${size}px ${fontFamily}`;
 
