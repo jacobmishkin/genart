@@ -1,61 +1,70 @@
 const canvasSketch = require("canvas-sketch");
 const { lerp } = require("canvas-sketch-util/math");
 const random = require("canvas-sketch-util/random");
-const palettes = require("nice-color-palettes");
+const palettes = require("nice-color-palettes/1000.json");
+
 const settings = {
-  dimensions: [2048, 2048],
-  orientation: "landscape"
+  dimensions: [2048, 2048]
 };
 
-const sketch = () => {
+const sketch = ({ width, height }) => {
+  const count = 40;
+  const margin = width * 0.15;
+  const maxColors = random.rangeFloor(2, 6);
+  const fontFamily = '"Avenir"';
+  const palette = random.shuffle(random.pick(palettes)).slice(0, maxColors);
+  const background = "hsl(0, 0%, 94%)";
+  const characters = "=:".split("");
+
   const createGrid = () => {
-    const colorCount = random.rangeFloor(2, 6);
-    const palette = random.shuffle(random.pick(palettes)).slice(0, colorCount);
     const points = [];
-    const count = 20;
-    const characters = "←↑→↓AB".split("");
+    const frequency = random.range(0.75, 1.25);
 
     for (let x = 0; x < count; x++) {
       for (let y = 0; y < count; y++) {
-        const u = count <= 1 ? 0.5 : x / (count - 1);
-        const v = count <= 1 ? 0.5 : y / (count - 1);
-        const character = random.pick(characters);
-        const radius = Math.abs(random.noise2D(u, v)) * 0.08;
+        let u = x / (count - 1);
+        let v = y / (count - 1);
+
+        const [dx, dy] = random.insideSphere(0.05);
+        u += dx;
+        v += dy;
+
+        const n = random.noise2D(u * frequency, v * frequency);
+        const size = n * 0.5 + 0.5;
+        const baseSize = width * 0.05;
+        const sizeOffset = width * 0.03;
+
         points.push({
           color: random.pick(palette),
-          radius,
-          rotation: random.noise2D(u, v),
-          position: [u, v],
-          character
+          size: Math.abs(baseSize * size + random.gaussian() * sizeOffset),
+          rotation: n * Math.PI * 0.5,
+          character: random.pick(characters),
+          position: [u, v]
         });
       }
     }
     return points;
   };
 
-  // random.setSeed(10);
-  const points = createGrid().filter(() => random.value() > 0.2);
+  const grid = createGrid();
 
   return ({ context, width, height }) => {
-    const margin = width * 0.05;
-    context.fillStyle = "#1d5464";
+    context.fillStyle = background;
     context.fillRect(0, 0, width, height);
 
-    points.forEach(data => {
-      const { position, radius, color, rotation, character } = data;
+    grid.forEach(({ position, rotation, size, color, character }) => {
       const [u, v] = position;
       const x = lerp(margin, width - margin, u);
       const y = lerp(margin, height - margin, v);
+      context.fillStyle = context.strokeStyle = color;
+      context.textAlign = "left";
+      context.textBaseline = "middle";
+      context.font = `${size}px ${fontFamily}`;
 
-      // context.beginPath();
-      // context.arc(x, y, radius * width, 0, Math.PI * 2, false);
-      // context.fillStyle = color;
-      // context.fill();
       context.save();
-      context.fillStyle = color;
-      context.font = `${radius * width}px 'Helvetica'`;
       context.translate(x, y);
-      //context.rotate(rotation);
+      context.rotate(rotation);
+      context.globalAlpha = 0.7;
       context.fillText(character, 0, 0);
       context.restore();
     });
